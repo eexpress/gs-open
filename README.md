@@ -9,3 +9,5 @@ Copy / Select a full path file / directory name, or incomplete path, or pure fil
 ---
 
 ![](screenshot.png)
+
+![](screenshot.gif)
