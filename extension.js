@@ -74,7 +74,7 @@ const Indicator = GObject.registerClass(
 
 		add_menu(text) {
 			if (text.indexOf("~/") == 0) {
-				text = GLib.getenv('HOME') + text.substr(1);
+				text = GLib.get_home_dir + text.substr(1);
 			}
 			if (GLib.file_test(text, GLib.FileTest.IS_REGULAR | GLib.FileTest.IS_DIR)) {
 				this.mfile.file = text;
