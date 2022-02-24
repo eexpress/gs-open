@@ -1,0 +1,12 @@
+{
+  "name": "Open Anywhere",
+  "description": "Copy / Select a full path file / directory name, or incomplete path, or pure file name. Open a context menu to let you choose how to open it.",
+  "uuid": "open@eexpss.gmail.com",
+  "url": "https://github.com/eexpress/gnome-shell-open",
+  "settings-schema": "org.gnome.shell.extensions.open",
+  "gettext-domain": "open",
+  "shell-version": [
+    "40","41","42"
+  ],
+  "version": 1
+}
