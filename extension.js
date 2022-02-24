@@ -64,13 +64,44 @@ const Indicator = GObject.registerClass(
 			}
 		};
 
-		judge(text) {
+		judge(str) {
 			lazytext = "";
-			if (!this.add_menu(text)) {
-				text = this.loc_file(text);
-				if (text) this.add_menu(text);
+			if (!this.add_menu(str)) { //找到两个的，就认为无效。
+				if (str.charAt(str.length - 1) == '/') str = str.substr(0, str.length - 1);
+				if (str.indexOf("/") > 0) { //`find` output
+					str = "*" + str.substr(str.indexOf(".") == 0 ? 1 : 0);
+				} else { //`ls` output
+					str = "*/" + str;
+				}
+				this.async_cmd(str);
 			}
 		}
+
+		async_cmd(str) {
+			lg("str: " + str);
+			try {
+				let proc = Gio.Subprocess.new(
+					[ 'locate', '-n', '10', '-w', str ],
+					Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE);
+
+				proc.communicate_utf8_async(null, null, (proc, res) => {
+					try {
+						let [, stdout, stderr] = proc.communicate_utf8_finish(res);
+						if (proc.get_successful()) {
+							lg("out: " + stdout);
+							const lines = stdout.split("\n");
+							const l = lines.filter(item => item.indexOf('/.') === -1 && item);
+							lg("filt: " + l);
+							if (l.length == 1) this.add_menu(l[0]);
+						} else {
+							lg("err: " + stderr);
+						}
+					} catch (e) { logError(e); } finally {
+						lg("finish.");
+					}
+				});
+			} catch (e) { logError(e); }
+		};
 
 		add_menu(text) {
 			if (text.indexOf("~/") == 0) {
@@ -102,29 +133,6 @@ const Indicator = GObject.registerClass(
 				a.label.clutter_text.set_markup(pango);
 			}
 		}
-
-		loc_file(str) { //找到两个的，就认为无效。
-			if (str.charAt(str.length - 1) == '/') str = str.substr(0, str.length - 1);
-			if (str.indexOf("/") > 0) { //`find` output
-				// delete prefix '.'
-				str = "*" + str.substr(str.indexOf(".") == 0 ? 1 : 0);
-			} else { //`ls` output
-				str = "*/" + str;
-			}
-			lg(str);
-
-			let ret = GLib.spawn_command_line_sync(`locate -n 10 -w '${str}'`);
-			if ((ret[0]) && (ret[3] == 0)) { // ok, exit_status = 0
-				const lf = ByteArray.toString(ret[1]).split("\n");
-				const lff = lf.filter(item => item.indexOf('/.') === -1 && item);
-				lg(lff);
-				if (lff.length == 1)
-					return lff[0];
-				else
-					return null;
-			}
-			return null;
-		};
 
 		get_context_menu(text) {
 			try {
