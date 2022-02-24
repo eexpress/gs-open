@@ -87,6 +87,8 @@ const Indicator = GObject.registerClass(
 		};
 
 		markup() {
+			this.mfile.label.text = this.mfile.file;
+			return;
 			const a = this.mfile;
 			if (!a.file) {
 				a.label.text = "";
