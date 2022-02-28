@@ -1,4 +1,4 @@
-const { GObject, GLib, Gio, Pango, St } = imports.gi;
+const { GObject, GLib, Gio, Pango, St, Meta, Shell } = imports.gi;
 
 const ExtensionUtils = imports.misc.extensionUtils;
 const Main = imports.ui.main;
@@ -18,6 +18,7 @@ function lg(s) {
 
 let lastclip = "";
 let lazytext = ""; //不弹窗时，临时保存现场。
+let key_C_S_O = false;
 
 const Indicator = GObject.registerClass(
 	class Indicator extends PanelMenu.Button {
@@ -49,6 +50,13 @@ const Indicator = GObject.registerClass(
 					this.checknew(text);
 				});
 			});
+
+			Main.wm.addKeybinding("open-file-selected", ExtensionUtils.getSettings(), Meta.KeyBindingFlags.NONE, Shell.ActionMode.ALL, () => { // excute as click menu, but no menu popup.
+				if (!this.menu.isOpen && this.mauto.state == false && lazytext.length > 3) {
+					key_C_S_O = true;
+					this.judge(lazytext);
+				}
+			});
 		}
 
 		checknew(text) {
@@ -78,7 +86,6 @@ const Indicator = GObject.registerClass(
 		}
 
 		async_cmd(str) {
-			lg("str: " + str);
 			try {
 				let proc = Gio.Subprocess.new(
 					[ 'locate', '-n', '10', '-w', str ],
@@ -108,6 +115,11 @@ const Indicator = GObject.registerClass(
 				text = GLib.get_home_dir() + text.substr(1);
 			}
 			if (GLib.file_test(text, GLib.FileTest.IS_REGULAR | GLib.FileTest.IS_DIR)) {
+				if (key_C_S_O) {
+					key_C_S_O = false;
+					Gio.app_info_launch_default_for_uri(`file://${text}`, global.create_app_launch_context(0, -1));
+				}
+
 				this.mfile.file = text;
 				this.markup();
 				this.menu._getMenuItems().forEach((j) => {if(j.cmd) j.destroy(); });
@@ -120,18 +132,18 @@ const Indicator = GObject.registerClass(
 		markup() {
 			this.mfile.label.text = this.mfile.file;
 			return;
-			const a = this.mfile;
-			if (!a.file) {
-				a.label.text = "";
-			} else {
-				const head = a.file.split("/");
-				const last = head.pop();
-				let dir = head.join("/");
-				if (dir.length > 0) dir += "/";
-				a.label.clutter_text.set_ellipsize(Pango.EllipsizeMode.NONE);
-				const pango = dir + last.bold().italics().fontcolor("#879CFF").replace(/font/g, "span");
-				a.label.clutter_text.set_markup(pango);
-			}
+			//~ const a = this.mfile;
+			//~ if (!a.file) {
+			//~ a.label.text = "";
+			//~ } else {
+			//~ const head = a.file.split("/");
+			//~ const last = head.pop();
+			//~ let dir = head.join("/");
+			//~ if (dir.length > 0) dir += "/";
+			//~ a.label.clutter_text.set_ellipsize(Pango.EllipsizeMode.NONE);
+			//~ const pango = dir + last.bold().italics().fontcolor("#879CFF").replace(/font/g, "span");
+			//~ a.label.clutter_text.set_markup(pango);
+			//~ }
 		}
 
 		get_context_menu(text) {
@@ -193,6 +205,7 @@ class Extension {
 		lg("stop");
 		this._indicator.destroy();
 		this._indicator = null;
+		Main.wm.removeKeybinding("open-file-selected");
 	}
 }
 
