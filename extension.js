@@ -130,20 +130,25 @@ const Indicator = GObject.registerClass(
 		};
 
 		markup() {
-			this.mfile.label.text = this.mfile.file;
-			return;
-			//~ const a = this.mfile;
-			//~ if (!a.file) {
-			//~ a.label.text = "";
-			//~ } else {
-			//~ const head = a.file.split("/");
-			//~ const last = head.pop();
-			//~ let dir = head.join("/");
-			//~ if (dir.length > 0) dir += "/";
-			//~ a.label.clutter_text.set_ellipsize(Pango.EllipsizeMode.NONE);
-			//~ const pango = dir + last.bold().italics().fontcolor("#879CFF").replace(/font/g, "span");
-			//~ a.label.clutter_text.set_markup(pango);
-			//~ }
+			const fstr = this.mfile.file;
+			const lstr = this.mfile.label;
+			let dir = '';
+			let last = '';
+			if (!fstr) {
+				lstr.text = "";
+			} else {
+				const pos = fstr.lastIndexOf("/");
+				if(pos == -1){
+					last = fstr;
+				}else{
+					dir = fstr.substr(0, pos) + "/";
+					last = fstr.substr(pos+1);
+				}
+				const pango = dir + last.bold().italics().fontcolor("#879CFF").replace(/font/g, "span");
+				lstr.clutter_text.set_markup(pango);
+				const Ell = pango.length > 50 ? Pango.EllipsizeMode.MIDDLE : Pango.EllipsizeMode.NONE;
+				lstr.clutter_text.set_ellipsize(Ell);	//迷之省略函数
+			}
 		}
 
 		get_context_menu(text) {
